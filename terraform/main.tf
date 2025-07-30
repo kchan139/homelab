@@ -11,7 +11,7 @@ provider "digitalocean" {
 }
 
 resource "digitalocean_ssh_key" "web" {
-  name       = "MacOS SSH key"
+  name       = "Khoa SSH key"
   public_key = file("~/.ssh/id_ed25519.pub")
 }
 
@@ -53,7 +53,7 @@ resource "digitalocean_droplet" "web" {
   image  = "ubuntu-24-04-x64"
   name   = "kserver-${count.index + 1}"
   region = "sgp1"
-  size   = "s-1vcpu-1gb"
+  size   = "s-4vcpu-8gb-intel"
   ssh_keys = [
     digitalocean_ssh_key.web.id
   ]
