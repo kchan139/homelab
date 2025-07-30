@@ -202,7 +202,7 @@
       args:
         creates: /usr/local/bin/starship
 
-    - name: Add Starship to Bash all user's profiles
+    - name: Add Starship to Bash profiles for all users
       ansible.builtin.blockinfile:
         path: /etc/profile.d/starship.sh
         create: yes
@@ -212,6 +212,11 @@
           if command -v starship >/dev/null 2>&1; then
             eval "$(starship init bash)"
           fi
+
+    - name: Remove Starship install script
+      ansible.builtin.file:
+        path: /tmp/starship-install.sh
+        state: absent
 
     # --- HELIX --- #
     - name: Add Helix PPA
