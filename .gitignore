@@ -59,6 +59,5 @@ sandbox
 ansible/roles/*
 !ansible/roles/project-*
 !ansible/roles/README.md
-vars/password.yml
 inventory.*
-
+secrets.yml
