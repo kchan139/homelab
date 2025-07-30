@@ -4,58 +4,63 @@ terraform {
       source  = "digitalocean/digitalocean"
       version = "~> 2.0"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 5"
+    }
   }
 }
 
 provider "digitalocean" {
+  token = var.do_token
 }
 
-resource "digitalocean_ssh_key" "web" {
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}
+
+resource "digitalocean_ssh_key" "server" {
   name       = "Khoa SSH key"
   public_key = file("~/.ssh/id_ed25519.pub")
 }
 
-# resource "digitalocean_domain" "domain" {
-#   name = "khoa.email"
-# }
+resource "cloudflare_dns_record" "digitalocean_subdomain" {
+  zone_id = var.cloudflare_zone_id
+  name    = "digitalocean"
+  type    = "A"
+  content = digitalocean_loadbalancer.server.ip
+  ttl     = 1
+  proxied = true
+}
 
-# resource "digitalocean_record" "default" {
-#   domain = digitalocean_domain.domain.name
-#   type   = "A"
-#   name   = "@"
-#   value  = digitalocean_loadbalancer.web.ip
-#   ttl    = 1800
-# }
+resource "digitalocean_loadbalancer" "server" {
+  name   = "load-balancer"
+  region = "sgp1"
 
-# resource "digitalocean_loadbalancer" "web" {
-#   name   = "web-lb-1"
-#   region = "sgp1"
+  forwarding_rule {
+    entry_port     = 80
+    entry_protocol = "http"
+    target_port    = 80
+    target_protocol = "http"
+  }
 
-#   forwarding_rule {
-#     entry_port     = 80
-#     entry_protocol = "http"
+  healthcheck {
+    protocol = "http"
+    port     = 80
+    path     = "/"
+  }
 
-#     target_port     = 8000
-#     target_protocol = "http"
-#   }
+  droplet_ids = digitalocean_droplet.server.*.id
+}
 
-#   healthcheck {
-#     path     = "/"
-#     port     = 8000
-#     protocol = "http"
-#   }
-
-#   droplet_ids = digitalocean_droplet.web.*.id
-# }
-
-resource "digitalocean_droplet" "web" {
+resource "digitalocean_droplet" "server" {
   count  = 1
   image  = "ubuntu-24-04-x64"
   name   = "kserver-${count.index + 1}"
   region = "sgp1"
   size   = "s-4vcpu-8gb-intel"
   ssh_keys = [
-    digitalocean_ssh_key.web.id
+    digitalocean_ssh_key.server.id
   ]
 
   # provisioner "local-exec" {
@@ -72,9 +77,9 @@ resource "digitalocean_droplet" "web" {
 }
 
 output "droplet_ips" {
-  value = [for droplet in digitalocean_droplet.web : droplet.ipv4_address]
+  value = [for droplet in digitalocean_droplet.server : droplet.ipv4_address]
 }
 
-# output "load_balancer_ip" {
-#   value = digitalocean_loadbalancer.web.ip
-# }
+output "load_balancer_ip" {
+  value = digitalocean_loadbalancer.server.ip
+}
