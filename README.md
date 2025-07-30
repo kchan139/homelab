@@ -1,2 +1,3 @@
-# my-vps
-DigitalOcean Droplet
+# my‑vps
+
+Personal VPS (DigitalOcean) managed with Terraform & Ansible.
