@@ -1,0 +1,339 @@
+---
+- name: Provision The Server
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - vars/password.yml
+
+  pre_tasks:
+    - name: Stop and mask automatic update services
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: stopped
+        masked: yes
+      loop:
+        - unattended-upgrades
+        - apt-daily.service
+        - apt-daily.timer
+        - apt-daily-upgrade.service
+        - apt-daily-upgrade.timer
+      ignore_errors: true
+
+    - name: Wait a moment for processes to fully stop
+      ansible.builtin.pause:
+        seconds: 5
+
+    - name: Remove any stale lock files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/dpkg/lock
+        - /var/lib/dpkg/lock-frontend
+        - /var/cache/apt/archives/lock
+      ignore_errors: true
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+        lock_timeout: 300
+      register: apt_update
+      retries: 3
+      delay: 10
+      until: apt_update is succeeded
+
+    - name: Install prerequisites
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - btop
+          - tree
+          - bat
+          - net-tools
+          - neofetch
+          - fail2ban
+        state: present
+        lock_timeout: 300
+      register: apt_prereqs
+      retries: 3
+      delay: 10
+      until: apt_prereqs is succeeded
+
+    - name: Symlink batcat to cat
+      ansible.builtin.file:
+        src: /usr/bin/batcat
+        dest: /usr/local/bin/bat
+        state: link
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Create non-root user khoa
+      ansible.builtin.user:
+        name: khoa
+        state: present
+        shell: /bin/bash
+        create_home: yes
+        groups: sudo
+        append: yes
+        password: "{{ khoa_password | password_hash('sha512') }}"
+
+    # --- FIREWALL --- #
+    - name: Set UFW default incoming policy to deny
+      community.general.ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Set UFW default outgoing policy to allow
+      community.general.ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Limit SSH on custom port
+      community.general.ufw:
+        rule: limit
+        port: "1309"
+        proto: tcp
+
+    # - name: Allow HTTP
+    #   community.general.ufw:
+    #     rule: allow
+    #     port: "80"
+    #     proto: tcp
+
+    # - name: Allow HTTPS
+    #   community.general.ufw:
+    #     rule: allow
+    #     port: "443"
+    #     proto: tcp
+
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
+
+    # --- SSH CONFIG --- #
+    - name: Stop and disable ssh.socket
+      ansible.builtin.systemd:
+        name: ssh.socket
+        state: stopped
+        enabled: no
+
+    - name: Create .ssh directory for khoa
+      ansible.builtin.file:
+        path: /home/khoa/.ssh
+        state: directory
+        owner: khoa
+        group: khoa
+        mode: "0700"
+
+    - name: Copy root's authorized_keys to khoa user
+      ansible.builtin.copy:
+        src: /root/.ssh/authorized_keys
+        dest: /home/khoa/.ssh/authorized_keys
+        owner: khoa
+        group: khoa
+        mode: "0600"
+        remote_src: yes
+
+    - name: Change SSH port to 1309
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?Port"
+        line: "Port 1309"
+        backup: yes
+
+    - name: Disable password authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PasswordAuthentication"
+        line: "PasswordAuthentication no"
+
+    - name: Disable root login
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PermitRootLogin"
+        line: "PermitRootLogin no"
+
+    - name: Enable PAM
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?UsePAM"
+        line: "UsePAM yes"
+
+    - name: Enable public key auth
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PubkeyAuthentication"
+        line: "PubkeyAuthentication yes"
+
+    - name: Set authorized_keys path
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?AuthorizedKeysFile"
+        line: "AuthorizedKeysFile .ssh/authorized_keys"
+
+    - name: Validate SSH config
+      ansible.builtin.command: sshd -t
+
+    - name: Reload SSH service
+      ansible.builtin.systemd:
+        name: ssh
+        state: restarted
+
+    # --- STARSHIP --- #
+    - name: Download Starship installation script
+      ansible.builtin.get_url:
+        url: https://starship.rs/install.sh
+        dest: /tmp/starship-install.sh
+        mode: "0755"
+
+    - name: Install Starship
+      ansible.builtin.shell: /tmp/starship-install.sh --yes
+      args:
+        creates: /usr/local/bin/starship
+
+    - name: Add Starship to Bash all user's profiles
+      ansible.builtin.blockinfile:
+        path: /etc/profile.d/starship.sh
+        create: yes
+        mode: "0755"
+        block: |
+          # Init Starship
+          if command -v starship >/dev/null 2>&1; then
+            eval "$(starship init bash)"
+          fi
+
+    # --- HELIX --- #
+    - name: Add Helix PPA
+      ansible.builtin.apt_repository:
+        repo: ppa:maveonair/helix-editor
+        state: present
+
+    - name: Install Helix
+      ansible.builtin.apt:
+        name: helix
+        state: present
+        update_cache: yes
+
+    # --- DOCKER --- #
+    # - name: Create directory for Docker GPG key
+    #   ansible.builtin.file:
+    #     path: /etc/apt/keyrings
+    #     state: directory
+    #     mode: "0755"
+
+    # - name: Download Docker GPG key
+    #   ansible.builtin.get_url:
+    #     url: https://download.docker.com/linux/ubuntu/gpg
+    #     dest: /tmp/docker.gpg
+    #     mode: "0644"
+
+    # - name: Add Docker GPG key
+    #   ansible.builtin.shell: |
+    #     gpg --dearmor < /tmp/docker.gpg > /etc/apt/keyrings/docker.gpg
+    #     chmod 644 /etc/apt/keyrings/docker.gpg
+    #   args:
+    #     creates: /etc/apt/keyrings/docker.gpg
+
+    # - name: Add Docker repository
+    #   ansible.builtin.apt_repository:
+    #     repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['lsb']['codename'] }} stable"
+    #     state: present
+    #     filename: docker
+
+    # - name: Install Docker packages
+    #   ansible.builtin.apt:
+    #     name:
+    #       - docker-ce
+    #       - docker-ce-cli
+    #       - containerd.io
+    #       - docker-buildx-plugin
+    #       - docker-compose-plugin
+    #     state: present
+    #     update_cache: yes
+    #     lock_timeout: 300
+    #   register: apt_docker
+    #   retries: 3
+    #   delay: 10
+    #   until: apt_docker is succeeded
+
+    # - name: Start and enable Docker service
+    #   ansible.builtin.systemd:
+    #     name: docker
+    #     state: started
+    #     enabled: yes
+
+    # - name: Add current user to docker group
+    #   ansible.builtin.user:
+    #     name: "{{ ansible_user }}"
+    #     groups: docker
+    #     append: yes
+    #   when: ansible_user != 'root'
+
+    # - name: Create application directory
+    #   ansible.builtin.file:
+    #     path: /opt/app
+    #     state: directory
+    #     owner: root
+    #     group: root
+    #     mode: "0755"
+
+    # - name: Copy application files
+    #   ansible.builtin.copy:
+    #     src: ../hello-world/
+    #     dest: /opt/app/
+    #     owner: root
+    #     group: root
+    #     mode: "0644"
+
+    # - name: Make sure app directory has correct permissions
+    #   ansible.builtin.file:
+    #     path: /opt/app
+    #     state: directory
+    #     recurse: yes
+    #     owner: root
+    #     group: root
+
+    # - name: Build Docker image
+    #   ansible.builtin.docker_image:
+    #     name: hello-web-app
+    #     build:
+    #       path: /opt/app
+    #       pull: yes
+    #     source: build
+    #     state: present
+    #     force_source: yes
+
+    # - name: Stop existing container if running
+    #   ansible.builtin.docker_container:
+    #     name: hello-world-container
+    #     state: absent
+    #   ignore_errors: yes
+
+    # - name: Run Docker container
+    #   ansible.builtin.docker_container:
+    #     name: hello-world-container
+    #     image: hello-web-app
+    #     state: started
+    #     restart_policy: unless-stopped
+    #     ports:
+    #       - "8000:8000"
+    #     healthcheck:
+    #       test: ["CMD", "curl", "-f", "http://localhost:8000"]
+    #       interval: 30s
+    #       timeout: 10s
+    #       retries: 3
+    #       start_period: 30s
+
+    # - name: Wait for application to be ready
+    #   ansible.builtin.wait_for:
+    #     host: "{{ ansible_default_ipv4.address }}"
+    #     port: 8000
+    #     delay: 10
+    #     timeout: 60
