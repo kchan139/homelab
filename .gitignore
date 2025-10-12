@@ -38,8 +38,7 @@ override.tf.json
 terraform.rc
 
 # --- ANSIBLE ---
-.*
-!.gitignore
+.*!.gitignore
 !.placeholder
 
 *.log

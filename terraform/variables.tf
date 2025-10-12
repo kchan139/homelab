@@ -4,20 +4,13 @@ variable "do_token" {
   sensitive   = true
 }
 
-variable "cloudflare_email" {
-  description = "Cloudflare account email"
-  type        = string
-  sensitive   = true
+variable "custom_ssh_port" {
+  description = "Custom SSH Port"
+  type        = number
 }
 
-variable "cloudflare_api_token" {
-  description = "Cloudflare API token"
-  type        = string
-  sensitive   = true
-}
-
-variable "cloudflare_zone_id" {
-  description = "Cloudflare Zone ID"
-  type        = string
+variable "ssh_access_ips" {
+  description = "List of CIDR blocks allowed to access SSH"
+  type        = list(string)
   sensitive   = true
 }

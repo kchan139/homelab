@@ -9,8 +9,8 @@ INVENTORY_FILE="$ANSIBLE_DIR/inventory.ini"
 
 # Generate inventory.ini
 echo "[servers]" > "$INVENTORY_FILE"
-terraform -chdir="$TERRAFORM_DIR" output -json droplet_ips \
-  | jq -r '.[]' \
+tofu -chdir="$TERRAFORM_DIR" output -json homelab_droplet_ip \
+  | jq \
   >> "$INVENTORY_FILE"
 
 echo "Generated inventory:"
