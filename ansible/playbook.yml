@@ -25,6 +25,7 @@
           - tree
           - curl
           - btop
+          - xclip
           - helix
           - gnupg2
           - net-tools
@@ -145,6 +146,30 @@
         path: /etc/ssh/sshd_config
         regexp: "^#?AuthorizedKeysFile"
         line: "AuthorizedKeysFile .ssh/authorized_keys"
+
+    - name: Ensure xauth is installed (needed for X11 forwarding)
+      ansible.builtin.dnf:
+        name: xauth
+        state: present
+
+    - name: Enable X11 forwarding in sshd_config
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?X11Forwarding'
+        line: 'X11Forwarding yes'
+        backup: yes
+
+    - name: Set X11 display offset
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?X11DisplayOffset'
+        line: 'X11DisplayOffset 10'
+
+    - name: Use localhost for X11 forwarding
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?X11UseLocalhost'
+        line: 'X11UseLocalhost yes'
 
     - name: Configure SELinux for custom SSH port
       community.general.seport:
