@@ -1,34 +1,52 @@
-# homelab
+# HOMELAB
 
-IaC for personal Fedora 42 homelab on DigitalOcean.
+Infrastructure-as-Code setup for a personal Fedora 42 server on DigitalOcean.
 
-## Stack
+## Tools
 
-- **OpenTofu**: Provision infrastructure
-- **Ansible**: Configure and manage servers
-- **Fedora 42**: Base OS
-- **Firewalld**: Firewall management
+- OpenTofu – infrastructure provisioning
+- Ansible – configuration management
+- Firewalld – basic network security
 
-## Structure
+## Usage
+
+1. Run Terraform (OpenTofu) to create the droplet:
+   ```bash
+   tofu -chdir=terraform apply
+   ```
+
+2. Run Ansible to configure it:
+
+   ```bash
+   ./ansible/scripts/run.sh
+   ```
+3. Copy `.env.example` to `.env` and fill in connection details.  
+4. Use `login.sh` to SSH into the server with port forwarding:
+
+   ```bash
+   ./login.sh
+   ```
+
+## Layout
 
 ```
 homelab
 ├── login.sh
+├── .env.example
 ├── ansible
-│   ├── inventory.ini
 │   ├── playbook.yml
+│   ├── inventory.ini
+│   ├── files
+│   │   └── motd
 │   ├── scripts
 │   │   ├── re-run.sh
 │   │   └── run.sh
 │   └── vars
-│       └── secrets.yml
+│       └── example.secrets.yml
 └── terraform
-    ├── firewall.tf
-    ├── main.tf
-    ├── outputs.tf
-    ├── providers.tf
-    ├── scripts
-    │   ├── list-images.sh
-    │   └── list-sizes.sh
-    └── variables.tf
+    ├── *.tf
+    ├── terraform.tfvars
+    └── scripts
+        ├── list-images.sh
+        └── list-sizes.sh
 ```
