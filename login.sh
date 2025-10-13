@@ -1,7 +1,14 @@
 #!/bin/bash
 set -e
 
-PROJECT_ROOT="$(dirname "$0")"
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+PROJECT_ROOT="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+
 source "$PROJECT_ROOT/.env"
 
 for mapping in $PORTS; do
