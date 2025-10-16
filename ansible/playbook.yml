@@ -25,11 +25,15 @@
           - tree
           - curl
           - btop
+          - nmap
           - xclip
           - helix
+          - whois
           - gnupg2
+          - tcpdump
           - net-tools
           - fastfetch
+          - bind-utils
           - ca-certificates
         state: present
       register: dnf_prereqs
@@ -155,21 +159,21 @@
     - name: Enable X11 forwarding in sshd_config
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
-        regexp: '^#?X11Forwarding'
-        line: 'X11Forwarding yes'
+        regexp: "^#?X11Forwarding"
+        line: "X11Forwarding yes"
         backup: yes
 
     - name: Set X11 display offset
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
-        regexp: '^#?X11DisplayOffset'
-        line: 'X11DisplayOffset 10'
+        regexp: "^#?X11DisplayOffset"
+        line: "X11DisplayOffset 10"
 
     - name: Use localhost for X11 forwarding
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
-        regexp: '^#?X11UseLocalhost'
-        line: 'X11UseLocalhost yes'
+        regexp: "^#?X11UseLocalhost"
+        line: "X11UseLocalhost yes"
 
     - name: Configure SELinux for custom SSH port
       community.general.seport:
