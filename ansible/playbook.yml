@@ -199,3 +199,37 @@
         owner: root
         group: root
         mode: "0644"
+
+    # --- CROWDSEC --- #
+    - name: Check if CrowdSec repository file exists
+      ansible.builtin.stat:
+        path: /etc/yum.repos.d/crowdsec_crowdsec.repo
+      register: crowdsec_repo_file
+
+    - name: Add CrowdSec repository
+      ansible.builtin.shell: >
+        curl -s https://packagecloud.io/install/repositories/crowdsec/crowdsec/script.rpm.sh | bash
+      args:
+        warn: false
+      when: not crowdsec_repo_file.stat.exists
+      changed_when: true
+
+    - name: Install CrowdSec agent and firewall bouncer
+      ansible.builtin.dnf:
+        name:
+          - crowdsec
+          - crowdsec-firewall-bouncer-nftables
+        state: present
+        disable_gpg_check: yes
+
+    - name: Start and enable CrowdSec service
+      ansible.builtin.systemd:
+        name: crowdsec
+        state: started
+        enabled: yes
+
+    - name: Start and enable CrowdSec firewall bouncer service
+      ansible.builtin.systemd:
+        name: crowdsec-firewall-bouncer
+        state: started
+        enabled: yes
