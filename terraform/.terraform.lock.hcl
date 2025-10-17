@@ -6,6 +6,7 @@ provider "registry.opentofu.org/digitalocean/digitalocean" {
   constraints = "~> 2.0"
   hashes = [
     "h1:GGlGViCTAAIcl/aDk4RJhZRZMJxsxjdTyru+E2C4iug=",
+    "h1:Vsfmplq4duiWEyTt+Lv6WreQIBoIa8UPKjLa91CuXtE=",
     "zh:1005254d655ee0432eef2f1965cbfe85f0071b012b2afcaec787c4bbfaf0b081",
     "zh:106bfc6c2eb747e3c609f31e6f9a34cd7771778b6ff1259209e46694f9394220",
     "zh:54af287161b182dbe87887cab3dc007d043acf4124dc7069767a3c2672c5682c",

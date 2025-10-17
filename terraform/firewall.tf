@@ -5,15 +5,15 @@ resource "digitalocean_firewall" "homelab" {
 
   ### SSH Access ###
 
-  # Allow SSH on default port from trusted IPs.
-  # This rule is meant for initial Ansible provisioning.
-  # You should lock this port down afterward 
-  # 
-  inbound_rule {
-    protocol         = "tcp"
-    port_range       = "22"
-    source_addresses = var.ssh_access_ips
-  }
+  # Allow SSH access from trusted IPs on a custom port.
+  # Intended for initial Ansible provisioning or emergency access.
+  # Lock this port down or disable it entirely during normal operation.
+
+  # inbound_rule {
+  #   protocol         = "tcp"
+  #   port_range       = "22"
+  #   source_addresses = var.ssh_access_ips
+  # }
 
   inbound_rule {
     protocol         = "tcp"
