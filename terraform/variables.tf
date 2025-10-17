@@ -14,3 +14,8 @@ variable "ssh_access_ips" {
   type        = list(string)
   sensitive   = true
 }
+
+variable "cloudflare_endpoint" {
+  description = "Cloudflare S3 Endpoint"
+  type        = string
+}
