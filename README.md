@@ -1,18 +1,21 @@
 # HOMELAB
 
-Infrastructure-as-Code setup for a personal Fedora 42 server on DigitalOcean.
+Automated provisioning and configuration of a Fedora 42 cloud server using Infrastructure-as-Code principles.
+The setup bootstraps a DigitalOcean droplet with hardened SSH access, firewall policies, user management, intrusion prevention, and remote Terraform state management.
 
 ## Tools
 
-- OpenTofu – infrastructure provisioning
-- Ansible – configuration management
-- Firewalld – basic network security
+* **OpenTofu** – declarative infrastructure provisioning
+* **Ansible** – post-provision configuration and system hardening
+* **Firewalld** – network-level access control
+* **CrowdSec** – behavioral intrusion detection and automated banning
 
 ## Usage
 
-1. Copy `.env.example` to `.env` and fill in the details.  
+1. Copy `.env.example` to `.env` and fill in the details.
 
 2. Run Terraform (OpenTofu) to create the droplet:
+
    ```bash
    source .env
    tofu -chdir=terraform apply
@@ -23,6 +26,7 @@ Infrastructure-as-Code setup for a personal Fedora 42 server on DigitalOcean.
    ```bash
    ./ansible/scripts/run.sh
    ```
+
    > Note: ssh_port, user, password must be defined in ansible/vars/secrets.yml
 
 4. Use `login.sh` to SSH into the server with port forwarding:
@@ -38,19 +42,19 @@ homelab
 ├── login.sh
 ├── .env
 ├── ansible
-│   ├── playbook.yml
-│   ├── inventory.ini
-│   ├── files
-│   │   └── motd
-│   ├── scripts
-│   │   ├── re-run.sh
-│   │   └── run.sh
-│   └── vars
-│       └── secrets.yml
+│   ├── playbook.yml
+│   ├── inventory.ini
+│   ├── files
+│   │   └── motd
+│   ├── scripts
+│   │   ├── re-run.sh
+│   │   └── run.sh
+│   └── vars
+│       └── secrets.yml
 └── terraform
     ├── *.tf
     ├── terraform.tfvars
     └── scripts
-        ├── list-images.sh
-        └── list-sizes.sh
+        ├── list-images.sh
+        └── list-sizes.sh
 ```
