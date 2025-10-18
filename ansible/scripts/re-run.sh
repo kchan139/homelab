@@ -9,9 +9,17 @@ INVENTORY_FILE="$ANSIBLE_DIR/inventory.ini"
 source "$PROJECT_ROOT/.env"
 
 # Prompt for vault password once and store in variable
-echo -n "Vault password: "
-read -rs VAULT_PASS
-echo
+if [ -p /dev/stdin ]; then
+  read -rs VAULT_PASS
+  BECOME_PASS="$BECOME_PASSWORD"  # Set from env in CI
+else
+  echo -n "Vault password: "
+  read -rs VAULT_PASS
+  echo
+  echo -n "BECOME password: "
+  read -rs BECOME_PASS
+  echo
+fi
 
 # Get SSH port and user from vault using the stored password
 SSH_PORT=$(echo "$VAULT_PASS" | ansible-vault view "$ANSIBLE_DIR/vars/secrets.yml" --vault-password-file=/dev/stdin | grep "^ssh_port:" | awk '{print $2}')
@@ -28,11 +36,11 @@ cat "$INVENTORY_FILE"
 echo
 
 # Run Ansible playbook using the generated inventory and stored password
-ANSIBLE_HOST_KEY_CHECKING=False echo "$VAULT_PASS" | ansible-playbook \
+ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook \
     -i "$INVENTORY_FILE" \
     --private-key ~/.ssh/id_ed25519 \
     -u "$USER" \
     -e ssh_port="$SSH_PORT" \
+    -e ansible_become_pass="$BECOME_PASS" \
     "$ANSIBLE_DIR/playbook.yml" \
-    --vault-password-file=/dev/stdin \
-    --ask-become-pass
+    --vault-password-file=<(echo "$VAULT_PASS")
