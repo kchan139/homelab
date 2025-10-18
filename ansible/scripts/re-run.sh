@@ -31,9 +31,9 @@ tofu -chdir="$TERRAFORM_DIR" output -json homelab_droplet_ip \
   | jq -r --arg port "$SSH_PORT" '. + " ansible_port=" + $port' \
   >> "$INVENTORY_FILE"
 
-echo "Generated inventory:"
-cat "$INVENTORY_FILE"
-echo
+echo "Generated inventory:" >&2
+cat "$INVENTORY_FILE" >&2
+echo >&2
 
 # Run Ansible playbook using the generated inventory and stored password
 ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook \
