@@ -6,6 +6,8 @@ TERRAFORM_DIR="$PROJECT_ROOT/terraform"
 ANSIBLE_DIR="$PROJECT_ROOT/ansible"
 INVENTORY_FILE="$ANSIBLE_DIR/inventory.ini"
 
+source "$PROJECT_ROOT/.env"
+
 # Prompt for vault password once and store in variable
 echo -n "Vault password: "
 read -rs VAULT_PASS
@@ -13,7 +15,7 @@ echo
 
 # Get SSH port and user from vault using the stored password
 SSH_PORT=$(echo "$VAULT_PASS" | ansible-vault view "$ANSIBLE_DIR/vars/secrets.yml" --vault-password-file=/dev/stdin | grep "^ssh_port:" | awk '{print $2}')
-USER=$(echo "$VAULT_PASS" | ansible-vault view "$ANSIBLE_DIR/vars/secrets.yml" --vault-password-file=/dev/stdin | grep "^user1:" | awk '{print $2}')
+USER=$(echo "$VAULT_PASS" | ansible-vault view "$ANSIBLE_DIR/vars/secrets.yml" --vault-password-file=/dev/stdin | grep "^user:" | awk '{print $2}')
 
 # Generate inventory.ini
 echo "[servers]" > "$INVENTORY_FILE"

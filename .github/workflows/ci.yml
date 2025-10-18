@@ -1,0 +1,54 @@
+name: Homelab Ansible Provision
+
+on:
+  push:
+    branches: [main]
+    paths: ["ansible/playbook.yml", ".github/workflows/**"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: latest
+
+      - name: Setup Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible jq
+
+      - name: Configure AWS credentials for Terraform backend
+        run: |
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+
+      - name: Initialize Terraform
+        working-directory: terraform
+        run: tofu init
+
+      - name: Create Ansible vault file
+        run: |
+          mkdir -p ansible/vars
+          cat > ansible/vars/secrets.yml << 'EOF'
+          ${{ secrets.ANSIBLE_VAULT_CONTENT }}
+          EOF
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts || true
+
+      - name: Run re-run.sh
+        working-directory: ansible/scripts
+        run: |
+          chmod +x re-run.sh
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" | ./re-run.sh 2>&1 | grep -v "Generated inventory" || true

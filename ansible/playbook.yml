@@ -96,6 +96,16 @@
         permanent: yes
         immediate: yes
 
+    # DigitalOcean's firewall will block this normally
+    # This is for emergency access
+    - name: Allow SSH on default port 22
+      ansible.posix.firewalld:
+        port: "22/tcp"
+        zone: public
+        state: enabled
+        permanent: yes
+        immediate: yes
+
     # --- SSH CONFIG --- #
     - name: Create .ssh directory for {{ user }}
       ansible.builtin.file:
@@ -114,11 +124,13 @@
         mode: "0600"
         remote_src: yes
 
-    - name: Change SSH port to custom port
-      ansible.builtin.lineinfile:
+    - name: Configure SSH to listen on port 22 and custom port
+      ansible.builtin.blockinfile:
         path: /etc/ssh/sshd_config
-        regexp: "^#?Port"
-        line: "Port {{ ssh_port }}"
+        marker: "# {mark} ANSIBLE MANAGED SSH PORTS"
+        block: |
+          Port 22
+          Port {{ ssh_port }}
         backup: yes
 
     - name: Disable password authentication
@@ -190,15 +202,6 @@
       ansible.builtin.systemd:
         name: sshd
         state: restarted
-
-    # --- MOTD --- #
-    - name: Copy custom MOTD file
-      ansible.builtin.copy:
-        src: files/motd
-        dest: /etc/motd
-        owner: root
-        group: root
-        mode: "0644"
 
     # --- CROWDSEC --- #
     - name: Check if CrowdSec repository file exists

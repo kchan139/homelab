@@ -7,6 +7,8 @@ TERRAFORM_DIR="$PROJECT_ROOT/terraform"
 ANSIBLE_DIR="$PROJECT_ROOT/ansible"
 INVENTORY_FILE="$ANSIBLE_DIR/inventory.ini"
 
+source "$PROJECT_ROOT/.env"
+
 # Generate inventory.ini
 echo "[servers]" > "$INVENTORY_FILE"
 tofu -chdir="$TERRAFORM_DIR" output -json homelab_droplet_ip \
