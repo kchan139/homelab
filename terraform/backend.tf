@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    endpoint                    = var.cloudflare_endpoint
+    endpoint                    = "https://852864276e83709a3837663c1bb0679e.r2.cloudflarestorage.com"
     region                      = "us-east-1"
     bucket                      = "homelab-tf-state"
     key                         = "homelab/terraform.tfstate"
