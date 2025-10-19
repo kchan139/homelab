@@ -1,3 +1,6 @@
+# Local temp directory
+local-tmp/
+
 # --- TERRAFORM ---
 # Local .terraform directories
 .terraform/
