@@ -1,5 +1,5 @@
 # Local temp directory
-local-tmp/
+tmp-local/
 
 # --- TERRAFORM ---
 # Local .terraform directories

@@ -16,7 +16,7 @@ else
   exit 1
 fi
 
-DEST="$PROJECT_ROOT/local-tmp/"
+DEST="$PROJECT_ROOT/tmp-local/"
 
 if [ "$#" -ne 1 ]; then
   echo "Copy a remote file into $DEST"
