@@ -20,6 +20,12 @@ resource "digitalocean_firewall" "homelab" {
     source_addresses = var.ssh_access_ips
   }
 
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "6443"
+    source_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
   ### ICMP for Ping ###
   inbound_rule {
     protocol         = "icmp"
