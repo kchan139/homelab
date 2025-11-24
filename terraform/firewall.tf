@@ -14,17 +14,33 @@ resource "digitalocean_firewall" "homelab" {
   #   source_addresses = var.ssh_access_ips
   # }
 
+  # ssh port
   inbound_rule {
     protocol         = "tcp"
     port_range       = var.custom_ssh_port
     source_addresses = var.ssh_access_ips
   }
 
+  ### Kubernetes API Server Port ###
   inbound_rule {
     protocol         = "tcp"
     port_range       = "6443"
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
+
+  ### Web Server Ports ###
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "80"
+    source_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "443"
+    source_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
 
   ### ICMP for Ping ###
   inbound_rule {

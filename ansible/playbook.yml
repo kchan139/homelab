@@ -88,6 +88,22 @@
         permanent: yes
         immediate: yes
 
+    - name: Allow HTTP
+      ansible.posix.firewalld:
+        port: "80/tcp"
+        zone: public
+        state: enabled
+        permanent: yes
+        immediate: yes
+
+    - name: Allow HTTPS
+      ansible.posix.firewalld:
+        port: "443/tcp"
+        zone: public
+        state: enabled
+        permanent: yes
+        immediate: yes
+
     - name: Allow SSH on custom port
       ansible.posix.firewalld:
         port: "{{ ssh_port }}/tcp"
@@ -97,7 +113,7 @@
         immediate: yes
 
     # DigitalOcean's firewall will block this normally
-    # This is for emergency access
+    # This is for emergency access only
     - name: Allow SSH on default port 22
       ansible.posix.firewalld:
         port: "22/tcp"
