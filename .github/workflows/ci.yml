@@ -2,8 +2,8 @@ name: Homelab Ansible Provision
 
 on:
   push:
-    branches: [main]
-    paths: ["ansible/playbook.yml", ".github/workflows/**"]
+    branches: [ main ]
+    paths: [ "ansible/playbook.yml", ".github/workflows/**" ]
   workflow_dispatch:
 
 jobs:
@@ -29,12 +29,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.ansible/collections
-          key: ${{ runner.os }}-ansible-${{ hashFiles('ansible/playbook.yml') }}
+          key: ${{ runner.os }}-ansible-${{ hashFiles('ansible/requirements.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-ansible-
 
       - name: Install Ansible collections
-        run: |
-          ansible-galaxy collection install community.general
-          ansible-galaxy collection install ansible.posix
+        run: ansible-galaxy collection install -r ansible/requirements.yml
 
       - name: Configure AWS credentials for Tofu backend
         run: |
@@ -47,7 +47,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.terraform.d/plugin-cache
-          key: ${{ runner.os }}-terraform-${{ hashFiles('terraform/.terraform.lock.hcl') }}
+          key: ${{ runner.os }}-terraform-${{ hashFiles('terraform/.terraform.lock.hcl')
+            }}
 
       - name: Initialize Tofu
         working-directory: terraform

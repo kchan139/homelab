@@ -203,6 +203,14 @@
         regexp: "^#?X11UseLocalhost"
         line: "X11UseLocalhost yes"
 
+    - name: Configure post-quantum SSH key exchange algorithms
+      ansible.builtin.blockinfile:
+        path: /etc/ssh/sshd_config
+        marker: "# {mark} ANSIBLE MANAGED SSH KEX"
+        block: |
+          KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org
+        backup: yes
+
     - name: Configure SELinux for custom SSH port
       community.general.seport:
         ports: "{{ ssh_port }}"
@@ -218,37 +226,3 @@
       ansible.builtin.systemd:
         name: sshd
         state: restarted
-
-    # --- CROWDSEC --- #
-    - name: Check if CrowdSec repository file exists
-      ansible.builtin.stat:
-        path: /etc/yum.repos.d/crowdsec_crowdsec.repo
-      register: crowdsec_repo_file
-
-    - name: Add CrowdSec repository
-      ansible.builtin.shell: >
-        curl -s https://packagecloud.io/install/repositories/crowdsec/crowdsec/script.rpm.sh | bash
-      args:
-        warn: false
-      when: not crowdsec_repo_file.stat.exists
-      changed_when: true
-
-    - name: Install CrowdSec agent and firewall bouncer
-      ansible.builtin.dnf:
-        name:
-          - crowdsec
-          - crowdsec-firewall-bouncer-nftables
-        state: present
-        disable_gpg_check: yes
-
-    - name: Start and enable CrowdSec service
-      ansible.builtin.systemd:
-        name: crowdsec
-        state: started
-        enabled: yes
-
-    - name: Start and enable CrowdSec firewall bouncer service
-      ansible.builtin.systemd:
-        name: crowdsec-firewall-bouncer
-        state: started
-        enabled: yes

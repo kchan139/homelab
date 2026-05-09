@@ -7,6 +7,9 @@ ANSIBLE_DIR="$PROJECT_ROOT/ansible"
 INVENTORY_FILE="$ANSIBLE_DIR/inventory.ini"
 
 source "$PROJECT_ROOT/.env"
+ 
+# Install dependencies
+ansible-galaxy collection install -r "$ANSIBLE_DIR/requirements.yml"
 
 # Prompt for vault password once and store in variable
 if [ -p /dev/stdin ]; then

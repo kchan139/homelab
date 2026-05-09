@@ -16,6 +16,8 @@ else
   exit 1
 fi
 
+SERVER_IP=$(awk '!/^[[:space:]]*(#|\[|$)/ { print $1; exit }' "$PROJECT_ROOT/ansible/inventory.ini")
+
 for mapping in $PORTS; do
     LOCAL_PORT="${mapping%%:*}"
     REMOTE_PORT="${mapping##*:}"

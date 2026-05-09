@@ -9,6 +9,9 @@ INVENTORY_FILE="$ANSIBLE_DIR/inventory.ini"
 
 source "$PROJECT_ROOT/.env"
 
+# Install dependencies
+ansible-galaxy collection install -r "$ANSIBLE_DIR/requirements.yml"
+
 # Generate inventory.ini
 echo "[servers]" > "$INVENTORY_FILE"
 tofu -chdir="$TERRAFORM_DIR" output -json homelab_droplet_ip \
